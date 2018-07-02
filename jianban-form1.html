@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+    <title>流程详情</title>
+    <style type="text/css">
+        table.gridtable {
+            font-family: verdana,arial,sans-serif;
+            font-size:11px;
+            color:#333333;
+            border-width: 1px;
+            border-color: #666666;
+            border-collapse: collapse;
+        }
+        table.gridtable th {
+            border-width: 1px;
+            padding: 8px;
+            border-style: solid;
+            border-color: #666666;
+            background-color: #dedede;
+        }
+        table.gridtable td {
+            border-width: 1px;
+            padding: 8px;
+            border-style: solid;
+            border-color: #666666;
+            background-color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+<!--    <h1>Hello, world!</h1>-->
+<div class="container">
+    <div class="row">
+        <div class="card">
+            <div class="card-body">
+                <form>
+                    <div class="form-group row">
+                        <label for="inputProcess" class="col-sm-2 col-form-label">进度名称</label>
+                        <div class="col-sm-10">
+                            <input type="text" class="form-control" id="inputProcess" placeholder=" ">
+                        </div>
+                    </div>
+                    <!--<div class="form-group row">-->
+                    <!--<label for="inputPassword3" class="col-sm-2 col-form-label">Password</label>-->
+                    <!--<div class="col-sm-10">-->
+                    <!--<input type="password" class="form-control" id="inputPassword3" placeholder="Password">-->
+                    <!--</div>-->
+                    <!--</div> -->
+                    <div class="form-group row">
+                        <label for="inputImageToLoad" class="col-sm-2 col-form-label">选择上传的图片</label>
+                        <div class="col-sm-10">
+                            <input type="file" class="form-control-file" id="inputImageToLoad">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="inputFileToLoad">选择上传的文件</label>
+                        <input type="file" class="form-control-file" id="inputFileToLoad" onchange="encodeImageFileAsURL();">
+                    </div>
+                    <div class="form-group row">
+                        <label for="inputDesc" class="col-sm-2 col-form-label">备注</label>
+                        <div class="col-sm-10">
+                            <input type="text" class="form-control" id="inputDesc" placeholder="">
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="inputExpiredDate" class="col-sm-2 col-form-label">到期时间</label>
+                        <div class="col-sm-10">
+                            <input type="text" class="form-control" id="inputExpiredDate" placeholder="">
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="inputStatus" class="col-sm-2 col-form-label">状态</label>
+                        <div class="col-sm-10">
+                            <input type="text" class="form-control" id="inputStatus" placeholder="">
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <div class="col-sm-10">
+                            <button type="submit" class="btn btn-primary btn-block" onclick="startTransalationProcess();">保存</button>
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <hr/>
+        <button id="button" onclick="loadDocuments()">Load documents!</button>
+        <div id="docs">
+
+        </div>
+    </div>
+</div>
+
+
+<!-- Optional JavaScript -->
+<script type='text/javascript'>
+    var user = "krisv";
+    var pwd = "krisv";
+    //  var startTransalationProcessURL = "http://localhost:8080/kie-server/services/rest/server/containers/translations/processes/translations/instances";
+    var startTransalationProcessURL = "http://localhost:8080/kie-server/services/rest/server/containers/jianban_1.1/processes/instances/255/variables"
+    var documentsURL = "http://localhost:8080/kie-server/services/rest/server/documents";
+
+    var srcData = null;
+    var fileName = null;
+    var fileSize = null;
+    function encodeImageFileAsURL() {
+
+        var filesSelected = document.getElementById("inputFileToLoad").files;
+        if (filesSelected.length > 0) {
+            var fileToLoad = filesSelected[0];
+            fileName = fileToLoad.name;
+            fileSize = fileToLoad.size;
+            var fileReader = new FileReader();
+
+            fileReader.onload = function (fileLoadedEvent) {
+                var local = fileLoadedEvent.target.result; // <--- data: base64
+                console.log("local:" + local);
+                srcData = local.replace(/^data:.*\/.*;base64,/, "");
+
+
+                console.log("Converted Base64 version is " + srcData);
+            }
+            fileReader.readAsDataURL(fileToLoad);
+        } else {
+            alert("Please select a file");
+        }
+    }
+
+    function startTransalationProcess() {
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', startTransalationProcessURL);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader("Authorization", "Basic " + btoa(user + ":" + pwd));
+        xhr.onreadystatechange = function () {
+            alert("lalala"+xhr.readyState+"&"+xhr.status);
+            console.log("xhr.readyState:"+xhr.readyState+"\n xhr.status:"+xhr.status);
+            if (xhr.readyState == 4) {
+                loadDocuments();
+            }
+        }
+        var uniqueId = generateUUID();
+//    xhr.send('{' +
+//      '"comments" : " '+ document.getElementById("inputName").value +'",' +
+//      '"status" : " '+ document.getElementById("inputEmail").value +'", ' +
+//      '"original_document" : {"DocumentImpl":{"identifier":"'+uniqueId+'","name":"'+fileName+'","link":"'+uniqueId+'","size":'+fileSize+',"lastModified":'+Date.now()+',"content":"' + srcData + '","attributes":null}}}');
+
+        xhr.send('{' +
+                '"originFile" : {"DocumentImpl":{"identifier":"' + uniqueId + '","name":"' + fileName
+                + '","link":"' + uniqueId + '","size":' + fileSize + ',"lastModified":' + Date.now()
+                + ',"content":"' + srcData + '","attributes":null}}}');
+    }
+
+
+    function deleteDoc(docId) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('DELETE', documentsURL + "/" + docId);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader("Authorization", "Basic " + btoa(user + ":" + pwd));
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState == 4 && xhr.status == 204) {
+                loadDocuments();
+            }
+        }
+
+        xhr.send();
+    }
+
+    function loadDocuments() {
+        //alert("loadDocuments()")
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', documentsURL);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader("Authorization", "Basic " + btoa(user + ":" + pwd));
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState == 4 && xhr.status == 200) {
+                var divContainer = document.getElementById("docs");
+                divContainer.innerHTML = "";
+                var documentListJSON = JSON.parse(xhr.responseText);
+                var documentsJSON = documentListJSON['document-instances'];
+                if (documentsJSON.length == 0) {
+                    return;
+                }
+                var col = [];
+                for (var i = 0; i < documentsJSON.length; i++) {
+                    for (var key in documentsJSON[i]) {
+//                        alert(key)
+//                        if (col.indexOf(key) === -1) {
+//                            col.push(key);
+//                        }
+                        if (key==="document-name" && col.indexOf("document-name") === -1){
+                            col.push(key);
+                        }
+                    }
+                }
+                var table = document.createElement("table");
+                table.classList.add("gridtable");
+
+                var tr = table.insertRow(-1);
+
+                for (var i = 0; i < col.length; i++) {
+                    var th = document.createElement("th");
+                    th.innerHTML = col[i];
+                    tr.appendChild(th);
+                }
+                var downloadth = document.createElement("th");
+                downloadth.innerHTML = 'Download';
+                tr.appendChild(downloadth);
+                var deleteth = document.createElement("th");
+                deleteth.innerHTML = 'Delete';
+                tr.appendChild(deleteth);
+
+                for (var i = 0; i < documentsJSON.length; i++) {
+
+                    tr = table.insertRow(-1);
+
+                    for (var j = 0; j < col.length; j++) {
+                        var tabCell = tr.insertCell(-1);
+                        tabCell.innerHTML = documentsJSON[i][col[j]];
+                    }
+                    var tabCellGet = tr.insertCell(-1);
+                    tabCellGet.innerHTML = '<button id="button" onclick="window.open(\'' + documentsURL + '/' + documentsJSON[i]['document-id'] + '/content\')">Download</button>';
+
+                    var tabCellDelete = tr.insertCell(-1);
+                    tabCellDelete.innerHTML = '<button id="button" onclick="deleteDoc(\'' + documentsJSON[i]['document-id'] + '\')">Delete</button>';
+                }
+                divContainer.appendChild(table);
+            }
+        }
+
+        xhr.send();
+    }
+
+
+    function generateUUID() {
+        var d = new Date().getTime();
+        var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+            var r = (d + Math.random() * 16) % 16 | 0;
+            d = Math.floor(d / 16);
+            return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+        });
+        return uuid;
+    }
+</script>
+<!-- jQuery first, then Popper.js, then Bootstrap JS -->
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+        integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
+        crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+        integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+        crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+        crossorigin="anonymous"></script>
+</body>
+</html>
